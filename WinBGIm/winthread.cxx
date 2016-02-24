@@ -52,11 +52,11 @@ DWORD WINAPI BGI__ThreadInitWindow( LPVOID pThreadData )
 
     if (pWndData->title.size( ))
     {
-	CaptionHeight = GetSystemMetrics( SM_CYCAPTION );   // Height of caption
+		CaptionHeight = GetSystemMetrics( SM_CYCAPTION );   // Height of caption
     }
     else
     {
-	CaptionHeight = 0;                                 // Height of caption
+		CaptionHeight = 0;                                 // Height of caption
     }
     xBorder = GetSystemMetrics( SM_CXFIXEDFRAME );      // Width of border
     yBorder = GetSystemMetrics( SM_CYFIXEDFRAME );      // Height of border
@@ -98,9 +98,7 @@ DWORD WINAPI BGI__ThreadInitWindow( LPVOID pThreadData )
     pWndData->hWnd = hWindow;
 
     // Store the address of the WindowData structure in the window's user data
-    // MGM TODO: Change this to SetWindowLongPtr:
-    //  SetWindowLongPtr( hWindow, GWLP_USERDATA, (LONG_PTR)pWndData );
-    SetWindowLongPtr( hWindow, GWLP_USERDATA, (LONG)pWndData );
+    SetWindowLongPtr( hWindow, GWLP_USERDATA, (LONG_PTR)pWndData );
 
     // Set the default active and visual page.  These must be set here in
     // addition to setting all the defaults in initwindow because the paint
@@ -317,7 +315,6 @@ static void cls_OnPaint( HWND hWnd )
     int width, height;          // Area that needs to be redrawn
     POINT srcCorner;            // Logical coordinates of the source image upper left point
     BOOL success;               // Is the BitBlt successful?
-    int i;                      // Count for how many bitblts have been tried.
 
     WaitForSingleObject(pWndData->hDCMutex, INFINITE);
     BeginPaint( hWnd, &ps );
@@ -343,19 +340,20 @@ static void cls_OnPaint( HWND hWnd )
     ReleaseMutex(pWndData->hDCMutex);
     
     if ( !success )
-    {   // I would like to invalidate the rectangle again
-	// since BitBlt wasn't successful, but the recursion seems
-	// to hang some machines.
-	// delay(100);
-	// InvalidateRect( hWnd, &(ps.rcPaint), FALSE );
-	// std::cout << "Failure in cls_OnPaint" << std:: endl;
+    {
+		// I would like to invalidate the rectangle again
+		// since BitBlt wasn't successful, but the recursion seems
+		// to hang some machines.
+		// delay(100);
+		// InvalidateRect( hWnd, &(ps.rcPaint), FALSE );
+		// std::cout << "Failure in cls_OnPaint" << std:: endl;
     }
 }
 
 // The message-handler function for the window
 //
-LRESULT CALLBACK WndProc
-( HWND hWnd, UINT uiMessage, WPARAM wParam, LPARAM lParam )
+LRESULT CALLBACK
+WndProc( HWND hWnd, UINT uiMessage, WPARAM wParam, LPARAM lParam )
 {
     const std::queue<POINTS> EMPTY;
     POINTS where;
@@ -363,54 +361,55 @@ LRESULT CALLBACK WndProc
     WindowData *pWndData = BGI__GetWindowDataPtr( hWnd );
     int type;           // Type of mouse message
     Handler handler;    // Registered mouse handler
-    UINT uHitTest;
     
     // If this is a mouse message, set our internal state
     if ( pWndData && ( uiMessage >= WM_MOUSEFIRST ) && ( uiMessage <= WM_MOUSELAST ) )
     {
-	type = uiMessage - WM_MOUSEFIRST;
-	if (!(pWndData->mouse_queuing[type]) && pWndData->clicks[type].size( ) )
-	{
-	    pWndData->clicks[type] = EMPTY;
-	}
+		type = uiMessage - WM_MOUSEFIRST;
+		if (!(pWndData->mouse_queuing[type]) && pWndData->clicks[type].size( ) )
+		{
+			pWndData->clicks[type] = EMPTY;
+		}
         pWndData->clicks[type].push(where = MAKEPOINTS( lParam ));  // Set the current position for the event type
-	pWndData->mouse = where; // Set the current mouse position
+		pWndData->mouse = where; // Set the current mouse position
 
         // If the user has registered a mouse handler, call it now
         handler = pWndData->mouse_handlers[type];
         if ( handler != NULL )
-	    handler( where.x, where.y );
+			handler( where.x, where.y );
     }
 
     switch ( uiMessage )
     {
-    HANDLE_MSG( hWnd, WM_CHAR, cls_OnChar );
-    HANDLE_MSG( hWnd, WM_DESTROY, cls_OnDestroy );
-    HANDLE_MSG( hWnd, WM_KEYDOWN, cls_OnKey );
-    HANDLE_MSG( hWnd, WM_PAINT, cls_OnPaint );
+	    HANDLE_MSG( hWnd, WM_CHAR, cls_OnChar );
+		HANDLE_MSG( hWnd, WM_DESTROY, cls_OnDestroy );
+		HANDLE_MSG( hWnd, WM_KEYDOWN, cls_OnKey );
+		HANDLE_MSG( hWnd, WM_PAINT, cls_OnPaint );
     case WM_LBUTTONDBLCLK:
-	return TRUE;
+		return TRUE;
     case WM_NCHITTEST:
-	uHitTest = DefWindowProc(hWnd, WM_NCHITTEST, wParam, lParam);
-	if(uHitTest != HTCLIENT && pWndData && pWndData->title.size( ) == 0)
-	    return HTCAPTION;
-	else
-	    return uHitTest;
+	{
+		LRESULT uHitTest = DefWindowProc(hWnd, WM_NCHITTEST, wParam, lParam);
+		if(uHitTest != HTCLIENT && pWndData && pWndData->title.size( ) == 0)
+			return HTCAPTION;
+		else
+			return uHitTest;
+	}
     case WM_CLOSE:
-	if ( pWndData->CloseBehavior )
-	{
-	    HANDLE_WM_CLOSE( hWnd, wParam, lParam, cls_OnClose );
-	}
-	return TRUE;
+		if ( pWndData->CloseBehavior )
+		{
+			HANDLE_WM_CLOSE( hWnd, wParam, lParam, cls_OnClose );
+		}
+		return TRUE;
     case WM_SYSCOMMAND:
-	switch ( LOWORD(wParam) )
-	{
-	case BGI_SAVE_AS: writeimagefile(NULL, 0, 0, INT_MAX, INT_MAX, false, hWnd); return 0;
-	case BGI_PRINT_SMALL: printimage(NULL, 2.0, 0.75, 0.75, 0, 0, INT_MAX, INT_MAX, false, hWnd); return 0;
-	case BGI_PRINT_MEDIUM: printimage(NULL, 4.5, 0.75, 0.75, 0, 0, INT_MAX, INT_MAX, false, hWnd); return 0;
-	case BGI_PRINT_LARGE: printimage(NULL, 7.0, 0.75, 0.75, 0, 0, INT_MAX, INT_MAX, false, hWnd); return 0;
-	}
-	break;
+		switch ( LOWORD(wParam) )
+		{
+		case BGI_SAVE_AS: writeimagefile(NULL, 0, 0, INT_MAX, INT_MAX, false, hWnd); return 0;
+		case BGI_PRINT_SMALL: printimage(NULL, 2.0, 0.75, 0.75, 0, 0, INT_MAX, INT_MAX, false, hWnd); return 0;
+		case BGI_PRINT_MEDIUM: printimage(NULL, 4.5, 0.75, 0.75, 0, 0, INT_MAX, INT_MAX, false, hWnd); return 0;
+		case BGI_PRINT_LARGE: printimage(NULL, 7.0, 0.75, 0.75, 0, 0, INT_MAX, INT_MAX, false, hWnd); return 0;
+		}
+		break;
     }
     return DefWindowProc( hWnd, uiMessage, wParam, lParam );
 }

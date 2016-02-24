@@ -51,18 +51,14 @@ WindowData* BGI__GetWindowDataPtr( HWND hWnd )
 {
     // Get the handle to the current window from the table if none is
     // specified.  Otherwise, use the specified value
-    if ( hWnd == NULL && BGI__CurrentWindow >= 0 && BGI__CurrentWindow < BGI__WindowCount)
+    if (hWnd == NULL && BGI__CurrentWindow >= 0 && BGI__CurrentWindow < BGI__WindowCount)
         hWnd = BGI__WindowTable[BGI__CurrentWindow];
     if (hWnd == NULL)
     {
-	showerrorbox("Drawing operation was attempted when there was no current window.");
-	exit(0);
+		showerrorbox("Drawing operation was attempted when there was no current window.");
+		exit(0);
     }
     // This gets the address of the WindowData structure associated with the window
-    // TODOMGM: Change this function to GetWindowLongPtr and change the set function
-    // elsewhere to SetWindowLongPtr.  We are using the short version now because
-    // g++ does not support the long version.
-    // return (WindowData*)GetWindowLongPTR( hWnd, GWLP_USERDATA );
     return (WindowData*)GetWindowLongPtr( hWnd, GWLP_USERDATA );
 }
 
@@ -816,7 +812,6 @@ unsigned int imagesize(int left, int top, int right, int bottom)
     HBITMAP hBitmap;      // Handle to bitmap that will be selected into hMemDC
     BITMAP b;             // The actual bitmap object for hBitmap
     long answer;          // Bytes needed to save this image
-    int tries;
 
     // Preliminary computations
     width = 1 + abs(right - left);
@@ -856,7 +851,6 @@ void getimage(int left, int top, int right, int bottom, void *bitmap)
     HBITMAP hOldBitmap;   // Handle to original bitmap of hMemDC
     HBITMAP hBitmap;      // Handle to bitmap that will be selected into hMemDC
     BITMAP* pUser;        // A pointer into the user's buffer, used as a BITMAP
-    long answer;          // Bytes needed to save this image
 
     // Preliminary computations
     pWndData = BGI__GetWindowDataPtr( );
@@ -1107,7 +1101,7 @@ void writeimagefile(
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_NOREADONLYRETURN | OFN_OVERWRITEPROMPT;
 	if (!GetSaveFileName(&ofn)) return;
 	if (strlen(fn) < 4 || (fn[strlen(fn)-4] != '.' && strlen(fn) < MAX_PATH-4))
-	    strcat(fn, ".BMP");
+	    strcat_s(fn, ".BMP");
     }
 
     // Preliminary computations
@@ -1167,7 +1161,7 @@ void printimage(
     HDC hDC;              // Device context for the visual window to print
     HBITMAP hBitmap;      // Handle to bitmap that will be selected into hMemDC
     HBITMAP hOldBitmap;   // Handle to original bitmap of hMemDC
-    int titlelen;         // Length of the title
+    size_t titlelen;      // Length of the title
     int pixels_per_inch_x, pixels_per_inch_y;
     double factor_x, factor_y;
     DOCINFO di;
@@ -1236,13 +1230,13 @@ void printimage(
     if (StartDoc(pd_Printer.hDC, &di) != SP_ERROR)
     {   
         StartPage(pd_Printer.hDC);
-	if (title == NULL) title = pWndData->title.c_str( );
-	titlelen = strlen(title);
-	if (titlelen > 0)
-	{
-	    TextOut(pd_Printer.hDC, int(pixels_per_inch_x*border_left_inches), int(pixels_per_inch_y*border_top_inches), title, titlelen);
-	    border_top_inches += 0.25;
-	}
+		if (title == NULL) title = pWndData->title.c_str( );
+		titlelen = strlen(title);
+		if (titlelen > 0)
+		{
+			TextOut(pd_Printer.hDC, int(pixels_per_inch_x*border_left_inches), int(pixels_per_inch_y*border_top_inches), title, (int)titlelen);
+			border_top_inches += 0.25;
+		}
         if (GetDeviceCaps(pd_Printer.hDC, RASTERCAPS) & RC_BITBLT)
         {
             StretchBlt(
