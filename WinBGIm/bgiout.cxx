@@ -1,5 +1,5 @@
-#include <stringstream>
-class BGIout : virtual std::basic_ostringstream
+#include <sstream>
+class BGIout : virtual std::ostringstream
 {
 public:
 
