@@ -142,9 +142,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="README.md" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="dibapi.h" />
     <ClInclude Include="dibutil.h" />
     <ClInclude Include="graphics.h" />
